@@ -1,347 +1,172 @@
+# Decentralized Enterprise Identity & Access Registry
 
-# Hyperledger Fabric Part - Application
+An **Internal HR & Security Portal** built on **Hyperledger Fabric**. An authorized
+enterprise administrator issues and manages employee identity rights on a tamper-proof
+ledger, giving a permanent audit trail of access control.
 
-From the last lab, we created our dev environment and used test network and interact with an application called fabcar. Today we will extend our knowledge by understanding the inner mechanism of fabcar and finally we will see how we can integrate frontend with our fabcar application. Finally we will use it from our browser.
+Built by converting the FabCar sample application — the "car" domain is replaced with
+employee identity records, and a CouchDB-backed search feature is added.
 
+---
 
-## Let's rewind ( Prerequisites )
+## Team
 
+| Member | Layer owned | GitHub |
+|--------|-------------|--------|
+| _Name_ | Chaincode (smart contract) | @_handle_ |
+| _Name_ | REST API (backend) | @_handle_ |
+| _Name_ | Frontend (dashboard UI) | @_handle_ |
+| _Name_ | Integration, CouchDB & QA | @_handle_ |
 
-Before getting started, some of you may still have problems regarding the installation and setup of the environment. So we will rewind section 1 of last lab. If you already have docker installed and Hyperledger fabric fabric-samples, you can skip this step.
+---
 
-1.  Assuming you already have git installed in your computer. Check for the git version using the command provided below. If you do not get any version in the log you need to install git( *You can follow last lab for this step* )
-```
-git --version 
-```
-
-2. Next, install jq using the command below:
-```
-sudo apt-get install jq
-```
-
-3. Now, we will install Docker and Docker Compose. But first, remove the older versions of Docker (if any) using the following commands:
-```
-sudo apt-get remove docker docker-engine docker.io containerd runc
-```
-It is okay if the above command reports that none of these packages is installed or package 'xyz..' is not installed.
-
-4. Now, Update apt:
-```
-sudo apt-get update
-```
-5. Install packages to allow apt to use a repository over HTTPS:
-```
-sudo apt-get update && sudo apt-get install apt-transport-https ca-certificates gnupg-agent software-properties-common lsb-release -y
-```
-This may take some time to install,
-
-6. The command below is for downloading the Docker’s official GPG key.  where **-o** defines the output path and **--dearmor** is to help convert the file into gpg format.
-```
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-keyring.gpg
-```
-Don't worry if this command does not show you any response or logs in terminal. Here, **docker-keyring.gpg** is the file containing the key.
-
-7. Use the following command to set up the stable repository and adding it to the list of package source: 
-```
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-```
-This command will also don't show any response or logs in terminal.
-
-8. Now, update the apt package again:
-```
-sudo apt-get update
-```
-This will show logs like below:
-
-![App Screenshot](./_readme-image/1_update_apt.png)
-
-NOTE: If you a GPG error when running apt-get update run the following command: 
-```shell
-sudo chmod a+r /etc/apt/keyrings/docker.gpg
-sudo apt-get update
-```
-
-
-9. Install docker :
-```
-sudo apt-get install docker-ce docker-ce-cli containerd.io -y
-```
-
-10. Now, to test the docker installation run: 
-```
-docker run hello-world
-```
-Don’t worry by seeing the message **“Unable to find image 'hello-world:latest' locally”**. This command initially checks if the hello-world image exists locally or not. If not found, it will be fetched from the library. 
-After successfully installation you should see a message like below:
-
-![App Screenshot](./_readme-image/2_hello_docker.png)
-
-11. Next, you need to use the following commands to ensure that the user can run the docker commands with proper access privilege. 
-- Add docker to user group
-```
-sudo groupadd docker
-```  
-This might report that the docker group is already added, Which is totally fine
-
-- Now, add the current user to the docker group using:
-```
-sudo usermod -a -G docker $USER
-```
-- Finally, activate the change by:
-```
-newgrp docker
-```
-
-- Now, you need to rebot the PC to make the changes function properly. Therefore run the command:
-```
-sudo reboot
-```
-This will restart your machine and then again open the terminal and follow **step 9**. it should work now.
-
-For more information on docker installation, you may visit here: [Link1](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-22-04), [Link2](https://docs.docker.com/engine/install/ubuntu/)
-
-12. Download the docker-compose binary file using the command mentioned below. You can see the version that we are using is 1.29.2. If you use an older version, you may get errors in upcoming steps. Therefore you should maintain the version according to the instruction of this lab:
-```
-sudo curl -L https://github.com/docker/compose/releases/download/1.29.2/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
-```
-Depending on your internet, this may take time. When it is finished, you should see a response like below:
-
-![App Screenshot](./_readme-image/3_download_composer.png)
-
-13. Make it executable using: 
-```
-sudo chmod +x /usr/local/bin/docker-compose
-```
-Dont' worry, if this command does not show any response or logs in terminal.
-
-14. Now, check the installation: 
-```
-docker-compose --version
-```
-You should see a version like **"docker-compose version 1.29.2, build 5becea4c"**
-
-15. Now, test the installation using the following steps:
-```
-mkdir hello-world
-cd hello-world
-nano docker-compose.yml
-
-```
-16. Now, add the following contents to the editor. After adding the following contents, press ctrl + o and then press enter to save the content. press ctrl + x to exit.  It is important to maintain indentation:
-```yml
-my-test:
-    image: hello-world
-```
-17. Now run the command: 
-```
-docker-compose up
-```
-The first time we run the command, if there's no local image named hello-world, Docker Compose will pull it from the Docker Hub public repository. Then it prints a similar message like below, which indicates our docker-compose installation is complete.
-
-![App Screenshot](./_readme-image/4_compose_up.png)
-
-18. Now, our computer is ready to install Hyperledger Fabric. But, the first step is to remove existing Fabric images, if any:
-```
-docker container prune
-```
-
-19. Next, copy and run the exact same command( don't remove space to make it one line sentence ).
-```
-cd ../
-mkdir fabric
-cd fabric
-```
-If fabric file already exist, delete and run the command again. 
-
-20. Now, by running the following command we will install fabric version 2.5.10 and ca version 1.5.13
-```
-curl -sSLO https://raw.githubusercontent.com/hyperledger/fabric/main/scripts/install-fabric.sh && chmod +x install-fabric.sh
-```
-
-Now, run:
-```
-./install-fabric.sh
-```
-
-This process will take time depending on your internet speed. Once it ends, you will see responses like below. 
-
-
-![App Screenshot](./_readme-image/5_install_sample_fabric.png)
-
-This will create a folder called **“fabric-sample”**. Check it, you should see a lot of files inside it. These are some sample boilerplates. we only need some of them. You will learn it later in this lab. 
-
-
-21. Now, if you check **fabric-samples** directory, you will see a lot of files there. However, for today's lab we will interact with the content marked in the image below:
-
-![App Screenshot](./_readme-image/6_required_file_list.png)
-
-These are the files and directories we should have.
-
-NOTE: To learn hyperledger fabric, there are multiple sample application which is available for new learners. It is recommended for the learners that they graually explore the existing demo projects as a learning path. Fabric, uses a few binaries (in the `fabric-samples/bin` directory) to allow the developers to develop the featues provided by fabric.If you are not aware of binaries, think it is like an executable file. The **bin** folder in the above image contains the all the binaries. These binaries are used together with few configuration available in the `fabric-samples/config` directory. There are some additional configurations require for networks and organizations. Fabric architecture is complex and you need time to understand all of these. Therefore, it is suggested that you move steadily to learn hyperledger fabric.  
-
-- **Checkpoint 1: Show this to your teacher.**
-    -
-
-
-
-## Section 1: Setting up files and folders
-In this section, we will see how we can communicate with the chaincode from the browser.
-
-1. First, download the files from https://github.com/YEASIN49/Hyperledger-Fabric-Fabcar and unzip the contents. If you want you also can clone it. To clone it open terminal and issue:
-```
-git clone https://github.com/YEASIN49/Hyperledger-Fabric-Fabcar.git
-```
-This will successfully clone the github repository and now you should have a directory called **Hyperledger-Fabric-Fabcar**. 
-
-![App Screenshot](./_readme-image/7_cloned_repo.png)
-
-2. Now, go to the **Hyperledger-Fabric-Fabcar** directory and copy all contents.
-
-![App Screenshot](./_readme-image/8_copy_file.png)
-
-These are the contents of a demo application called fabcar that we will run today.
-
-3. Now, go to the **fabric/fabric-samples** directory and create a file called **fabcar**. Next, paste all the copied contents here.
-
-![App Screenshot](./_readme-image/9_paste_file.png)
-
-Here, we are developing our application using javascript. Here the **chaincode-javascript** directory contains the chaincode written in javascript, **fabric-client** contains the frontend code. The **api-server** contains the rest API server, which bridges the frontend to communicate with the fabric ledger via chaincode.
-
-4. Now, open vscode or any other text editor you use and open **fabric-samples** there.
-
-You are now good to go to the next section.
-
-
-- **Checkpoint 2: Show this to your teacher**
-
-## Section 2: Understanding the application setup
-
-To run hyperledger fabric, there are some common steps: 
-
-  i. Start a network 
-
-  ii. Deploy chaincode to the network
-  
-  iii. Start and run application (frontend, backend, etc.)
-
-**Network:** The `fabric-samples` provides preconfigured test network which helps the developer to start learning the processes. In this session, we will use the **test-network** as our network which is available in the `fabric-samples/test-network` directory. Hyperledger fabric is designed to be a consortium blockchain platform, that means multiple organizations are part of its network. The **test-network** module is pre-configured to run two organizations. One can add more organizations, but it is beyond the scope of today's session.
-
-**Chaincode:** In ethereum, we used smart contract that enables the programming capabilities of ethereum blockchain. Similarly, Hyperledger fabric uses chaincode to executes its pragramming logic to interact with the ledger. The `fabric-samples/fabcar/chaincode-javascript` directory contains the chaincode for our application. 
+## System overview
 
-**API and Frontend:** The chaincode communicates within the network to interact with the ledger. User cannot use the chaincode directly from their end. Therefore, a rest API server is required, through which the frontend communicates with the chaincode. The `fabric-samples/fabcar/api-server` contains the rest APIs and the `fabric-samples/fabcar/fabcar-client` folder holds the frontend of the system.
+Unlike a public blockchain, Fabric is a permissioned network for private enterprise use.
+Here, a single trusted admin uses a web dashboard to register employees, view the
+directory, update clearance on events like termination, and search the registry — all
+backed by the immutable ledger and shared across the network's organizations (Org1/Org2).
 
+## Architecture
 
-
-## Section 3: Running the complete application
-In this section, you will run the complete application added with User Interface to interact from the browser. You need to follow the steps to run it. Don't worry if you don't understand anything while running the application.
-
-### 3.1. Starting the network and Deploying the chaincode 
-Fabric uses binaries and some configurations to execute its components. Usually the binaries are used through commands from terminal. However, fabric provides some bash scripts through which we can run them easily. E.g. to start the sample network, a basic terminal command is: `./network.sh up createChannel -ca -s couchdb`. There are some more commands, therefore it is required to read and understand the `fabric-samples/fabcar/startFabric.sh`. This file calls the network module of `test-network` directory and deploy the chaincode. Also, to understand how the networks runs, you need to explore the `test-network/network.sh` file. However, this should be your own interest and we will not explore those in this session as it requires a decent time and some understanding of shell.  
-
-Now, we will start the network. Open terminal from your code editor and go to the `fabric-samples/fabcar` directory from the terminal and run the command:
-```
-./startFabric.sh javascript
-```
-
-This command will invoke the `test-network` and initialize it and also it will deploy the chaincode available in the `fabcar/chaincode-javascript` directory to the fabric network.
-
-NOTE: YOU MAY GET ERROR WITH KEYWORD **TLS**. This is a common issue of fabric installation and it is due to the internet. Therefore, if you have such error, try the above command again.
-
-
-Now, if you run the command 
 ```
-docker ps
+  Browser (fabcar-client)  --HTTP-->  REST API (api-server)  --SDK-->  Chaincode (fabcar.js)
+        UI / forms                    Express routes                   Fabric ledger + CouchDB
+        <-----------------------------  JSON  <-----------------------------
 ```
 
-You should see the following container is running properly:
+Three layers, each owned by a team member:
 
-![App Screenshot](./_readme-image/10_running_docker_container.png)
+1. **Chaincode** — `chaincode-javascript/lib/fabcar.js`. The smart contract that reads and
+   writes identity records on the ledger.
+2. **REST API** — `api-server/`. An Express server that exposes the chaincode to the
+   browser and routes read/search requests.
+3. **Frontend** — `fabcar-client/`. A dashboard for the admin, no build step (opened with
+   Live Server).
 
+## Data model
 
-### 3.2 Running the application
+Each identity is stored under a unique key such as `EMP001`:
 
-1. Open a new terminal (or just move using `cd` command) and your path should be in **HERE_SOME_FOLDER/fabric/fabric-samples**. A reference is given below:
-
-![App Screenshot](./_readme-image/11_editor_path.png)
-
-2. Go to the api-server directory inside fabcar using:
-```
-cd fabcar/api-server
-```
-3. Now, we need to install npm packages. You can find the necessary packages that we are going to install inside the package.json file. It is strongly recommended to use node version 18. To install, run:
-```
-npm i
-``` 
-After, successful installation, you should see some logs similar to image below:
-
-![App Screenshot](./_readme-image/12_package_installation.png)
-
-
-4. run the command below to enroll admin to organization:
-```
-node enrollAdmin.js
-```
-You will get a similar response like below:
+| Field | Description | Example |
+|-------|-------------|---------|
+| `employee_name` | Full name | John Doe |
+| `department` | Business unit | HR, IT, Finance |
+| `role` | Job function | Developer, System Admin, Manager |
+| `clearance_status` | Access level | Active, Suspended, Revoked |
+| `docType` | Record type for CouchDB queries | `identity` |
 
-![App Screenshot](./_readme-image/16.1_enrollAdmin.png)
+## Features
 
-and then run the command to register user to organization:
-```
-node registerUser.js
-```
+| Feature | How it works | Chaincode transaction |
+|---------|--------------|-----------------------|
+| **Create** | Register a new employee identity | `createIdentity` |
+| **Read All** | List every registered identity | `queryAllIdentities` |
+| **Update** | Change clearance (e.g. Active → Revoked on termination) | `updateClearanceStatus` |
+| **Search by ID** | Look up one employee | `readIdentity` |
+| **Search by Department** | CouchDB rich query | `queryByDepartment` |
+| **Search by Clearance Status** | CouchDB rich query | `queryByClearanceStatus` |
 
-This will create a user under organization (Org1). You will see a response like below:
+## Tech stack
 
-![App Screenshot](./_readme-image/16.2-_register_user.png)
+Hyperledger Fabric 2.5 (test-network, two orgs) · CouchDB state database ·
+Node.js / Express · fabric-network SDK · vanilla HTML/CSS/JS frontend.
 
-Finally, we will power up our backend using:  
+## Project structure
 
-```
-npm start
 ```
-This will, start the backend service and you should see a response like below:
-
-![App Screenshot](./_readme-image/16_start_backend.png)
-
-5. Now, leave the terminal untouched. Open the index.html file from the `fabcar/fabcar-client/` directory.
-
-6. Now, go to the, extension tab of vscode and search 'live server'. You will find a lot of options. Install the extension shown in the image:
-
-![App Screenshot](./_readme-image/17_install_live_server.png)
-
-7. Now, click the **index.html** file and start **live-server** from the  bottom-right of the vscode.
-
-![App Screenshot](./_readme-image/18_start_UI.png)
-
-This will start our frontend server and a browser popup will open like image below:
-
-![App Screenshot](./_readme-image/19_UI.png)
-
-Now, interact with the application and try to understand the features. 
-
-You can check the currently running docker container using:
-```shell
-docker ps
+fabcar/
+├── chaincode-javascript/
+│   ├── lib/fabcar.js                 # identity smart contract
+│   └── META-INF/statedb/couchdb/indexes/
+│       ├── indexDepartment.json      # CouchDB index: docType + department
+│       └── indexClearanceStatus.json # CouchDB index: docType + clearance_status
+├── api-server/
+│   ├── index.js                      # Express routes
+│   ├── query.js                      # read all / by id / by department / by status
+│   ├── createCar.js                  # submits createIdentity
+│   ├── changeOwner.js                # submits updateClearanceStatus
+│   ├── enrollAdmin.js  registerUser.js   # unchanged
+├── fabcar-client/
+│   ├── index.html                    # dashboard
+│   └── styles.css
+├── startFabric.sh   networkDown.sh
 ```
-You should see the status of the containers are up.In addition to  the  peers of org1, org2, orderer. Also, we have ca_org1 and ca_rg2, ca_orderer and the couchDb;3.1.1 with port 5984. This is the database, where  our state data is stored. From theory class, you should be aware of *world state* in fabric. This couchDB holds such data. Now, go to this link: http://localhost:5984/_utils/#login and you will see a login option to couchDB has appeared. default credential to access it is, ```username: admin```, ```password: adminpw```. once you are logged in, you will see a UI like below where **mychannel_fabcar** is the database we are currently using. Explore it you should see these are the same data created by initLedger function  of our chaincode.
-
-![App Screenshot](./_readme-image/database.png)
 
+## Setup & run
 
+Prerequisites: Docker, Docker Compose, Node.js 18, and `fabric-samples` installed (see
+Lab 6 / the Fabcar lab). Place this project inside `fabric-samples/fabcar/`.
 
-**Checkpoint 3: Show till this part to your teacher**
+```bash
+# from fabric-samples/fabcar/
 
-
-
-To stop the network, you can use the available script. Go to the `fabric/samples/fabcar` directory from terminal window and run the command:
-```
+# clean any previous run
 ./networkDown.sh
+docker rm -f $(docker ps -aq) 2>/dev/null
+docker volume rm $(docker volume ls -q) 2>/dev/null
+rm -rf api-server/wallet/
+
+# start network + deploy chaincode (initLedger seeds sample identities)
+./startFabric.sh javascript
+
+# start the backend
+cd api-server
+npm i
+node enrollAdmin.js
+node registerUser.js
+npm start                     # http://localhost:3000
 ```
-This should, stop existing running hyperledger fabric test-network. After successfully shutting down the network you should see response like below:
 
-![App Screenshot](./_readme-image/14_network_stop.png)
+Open `fabcar-client/index.html` with the VS Code **Live Server** extension.
 
+> Re-run `./startFabric.sh javascript` after any change to `fabcar.js` to redeploy the
+> chaincode. The chaincode name stays `fabcar` (`-ccn fabcar`), so the API's
+> `getContract('fabcar')` is unchanged.
 
-The diagram provided below shows how the backend, frontend and chaincode maintain their communication. Here, the respective file/folder names are also included  for easier understanding. Here fabric-client  is the frontend part, api-server folder contains the backend related services and fabcar.js is the chaincode which is located in `fabcar/chaincode-javascript/lib` directory.
+## Search feature (CouchDB)
 
-![App Screenshot](./_readme-image/20_fabric_application_diagram.png)
+The network runs with `-s couchdb`, so `queryByDepartment` and `queryByClearanceStatus`
+use CouchDB Mango selectors, e.g.:
+
+```json
+{ "selector": { "docType": "identity", "department": "IT" } }
+```
+
+The two index definitions under `META-INF/statedb/couchdb/indexes/` are deployed with the
+chaincode so these queries are indexed rather than doing a full scan. Verify from
+`test-network/` (after exporting Org1 env vars as in Lab 6):
+
+```bash
+peer chaincode query -C mychannel -n fabcar -c '{"Args":["queryByDepartment","IT"]}'
+peer chaincode query -C mychannel -n fabcar -c '{"Args":["queryByClearanceStatus","Revoked"]}'
+```
+
+Inspect the raw data in CouchDB at http://localhost:5984/_utils (admin / adminpw),
+database `mychannel_fabcar`.
+
+## API reference
+
+| Method | Endpoint | Body / query | Result |
+|--------|----------|--------------|--------|
+| GET | `/get-identity` | – | all identities |
+| GET | `/get-identity?key=EMP001` | – | one identity |
+| GET | `/get-identity?department=IT` | – | identities in a department |
+| GET | `/get-identity?status=Active` | – | identities with a status |
+| POST | `/create` | key, employee_name, department, role, clearance_status | create |
+| POST | `/update` | key, clearance_status | update clearance |
+
+## Demo / screenshots
+
+_Add screenshots of: (1) the dashboard directory, (2) a create, (3) an update to Revoked,
+(4) a department search, (5) CouchDB `mychannel_fabcar`, (6) Org2 seeing the same data._
+
+## Team contributions
+
+_Fill in per member — chaincode functions written, API routes, UI, testing, docs, etc._
+
+## Notes
+
+- Network config, `enrollAdmin.js`, and `registerUser.js` are used as-is per the brief.
+- `createCar.js` / `changeOwner.js` keep their original filenames (as listed in the brief);
+  only their contents were changed to submit the identity transactions.
