@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -7,166 +8,223 @@
 
     <link rel="stylesheet" href="./styles.css">
 
-    <title>FabCar Using Hyperledger Fabric</title>
+    <title>Enterprise Identity &amp; Access Registry</title>
 </head>
+
 <body>
-    <div class="text-center">
-        <h1>
-            Fabcar
-        </h1>
-        <button onclick="getAll()">Get All Car</button>
-        <span>||</span>
-        <input id="search-input" type="text">
-        <button onclick="search()">Search</button>
-        <div id="show-car"></div>
-    </div>
-
-    <div class="text-center form-container">
-        <h3 >Create Car</h3>
-        <form id="createForm" action="" name="createCar">
-            <div>
-                <label for="">Car ID/Key</label>
-                <input name="key" />
+    <header class="topbar">
+        <div class="topbar-inner">
+            <div class="brand">
+                <span class="brand-mark">IAR</span>
+                <div>
+                    <h1>Identity &amp; Access Registry</h1>
+                    <p>Internal HR &amp; Security Portal — tamper-proof access control on Hyperledger Fabric</p>
+                </div>
             </div>
-            
-            <div>
-                <label for="">Made In</label>
-                <input name="make" />
+        </div>
+    </header>
+
+    <main class="wrap">
+
+        <!-- DIRECTORY + SEARCH -->
+        <section class="panel">
+            <div class="panel-head">
+                <h2>Employee directory</h2>
+                <button class="btn btn-ghost" onclick="getAll()">Read all identities</button>
             </div>
 
-            <div>
-                <label for="">Model</label>
-                <input name="model" />
+            <div class="search-row">
+                <label class="field">
+                    <span>Search by</span>
+                    <select id="filter-type" onchange="onFilterChange()">
+                        <option value="key">Unique ID</option>
+                        <option value="department">Department</option>
+                        <option value="status">Clearance status</option>
+                    </select>
+                </label>
+
+                <label class="field" id="wrap-id">
+                    <span>Employee ID</span>
+                    <input id="search-id" type="text" placeholder="EMP001" />
+                </label>
+
+                <label class="field hidden" id="wrap-department">
+                    <span>Department</span>
+                    <select id="search-department">
+                        <option value="HR">HR</option>
+                        <option value="IT">IT</option>
+                        <option value="Finance">Finance</option>
+                    </select>
+                </label>
+
+                <label class="field hidden" id="wrap-status">
+                    <span>Status</span>
+                    <select id="search-status">
+                        <option value="Active">Active</option>
+                        <option value="Suspended">Suspended</option>
+                        <option value="Revoked">Revoked</option>
+                    </select>
+                </label>
+
+                <button class="btn" onclick="runSearch()">Search</button>
             </div>
 
-            <div>
-                <label for="">Color</label>
-                <input name="color" />
-            </div>
+            <div id="results" class="results"></div>
+        </section>
 
-            <div>
-                <label for="">Owner</label>
-                <input name="owner" />
-            </div>
+        <div class="two-col">
+            <!-- CREATE -->
+            <section class="panel">
+                <div class="panel-head"><h2>Register identity</h2></div>
+                <form id="createForm" name="createIdentity">
+                    <label class="field">
+                        <span>Employee ID</span>
+                        <input name="key" placeholder="EMP007" required />
+                    </label>
+                    <label class="field">
+                        <span>Employee name</span>
+                        <input name="employee_name" placeholder="John Doe" required />
+                    </label>
+                    <label class="field">
+                        <span>Department</span>
+                        <select name="department">
+                            <option value="HR">HR</option>
+                            <option value="IT">IT</option>
+                            <option value="Finance">Finance</option>
+                        </select>
+                    </label>
+                    <label class="field">
+                        <span>Role</span>
+                        <select name="role">
+                            <option value="Developer">Developer</option>
+                            <option value="System Admin">System Admin</option>
+                            <option value="Manager">Manager</option>
+                        </select>
+                    </label>
+                    <label class="field">
+                        <span>Clearance</span>
+                        <select name="clearance_status">
+                            <option value="Active">Active</option>
+                            <option value="Suspended">Suspended</option>
+                            <option value="Revoked">Revoked</option>
+                        </select>
+                    </label>
+                    <button class="btn btn-block" type="submit">Register identity</button>
+                </form>
+            </section>
 
-            <div>
-                <button type="submit">Create</button>
-            </div>
-        </form>
-    </div>
+            <!-- UPDATE -->
+            <section class="panel">
+                <div class="panel-head"><h2>Update clearance</h2></div>
+                <p class="hint">Change an employee's access level — e.g. set to <strong>Revoked</strong> on termination.</p>
+                <form id="updateForm" name="updateClearance">
+                    <label class="field">
+                        <span>Employee ID</span>
+                        <input name="key" placeholder="EMP003" required />
+                    </label>
+                    <label class="field">
+                        <span>New clearance</span>
+                        <select name="clearance_status">
+                            <option value="Active">Active</option>
+                            <option value="Suspended">Suspended</option>
+                            <option value="Revoked">Revoked</option>
+                        </select>
+                    </label>
+                    <button class="btn btn-block" type="submit">Update clearance</button>
+                </form>
+            </section>
+        </div>
+    </main>
 
-    <div class="text-center form-container">
-        <h3 >Update Owner</h3>
-        <form id="updateForm" action="" name="updateOwner">
-            <div>
-                <label for="">Car ID/Key</label>
-                <input name="key" />
-            </div>
-            
-            <div>
-                <label for="">New Owner</label>
-                <input name="owner" />
-            </div>
-
-            <div>
-                <button type="submit">Update</button>
-            </div>
-        </form>
-    </div>
-    
     <script>
+        const API = 'http://localhost:3000';
 
-        // CREATING NEW CAR
+        // ---- CREATE ----
         const createForm = document.getElementById('createForm')
-
-        // THIS IS AN EVENT LISTENER WHICH WILL RUN WHEN WE CLICK THE CREATE BUTTON
-        createForm.addEventListener("submit", function(event) {
+        createForm.addEventListener('submit', function (event) {
             event.preventDefault()
-            const bodyParam = new URLSearchParams( new FormData(createForm) )
-            
-                //CALLING CREATE API
-                fetch('http://localhost:3000/create', {
-                    method: 'POST',
-                    body: bodyParam
-                })
-                .then(res => {
-                    return res.json()
-                })
-                .then( parsedRes => {
+            const bodyParam = new URLSearchParams(new FormData(createForm))
+            fetch(API + '/create', { method: 'POST', body: bodyParam })
+                .then(res => res.json())
+                .then(parsedRes => {
                     alert(parsedRes.message)
-                })
-                .catch(err => {
-                    console.error({ err })
-                })
-        });
-
-        // UPDATE: CHANGING CAR OWNER
-        const updateForm = document.getElementById('updateForm')
-
-        // THIS IS AN EVENT LISTENER WHICH WILL RUN WHEN WE CLICK THE UPDATE BUTTON
-        updateForm.addEventListener("submit", function(event) {
-            event.preventDefault()
-            const bodyParam = new URLSearchParams( new FormData(updateForm) )
-            
-                //CALLING UPDATE API
-                fetch('http://localhost:3000/update', {
-                    method: 'POST',
-                    body: bodyParam
-                })
-                .then(res => {
-                    if(res.status !== 200){
-                        alert('Unable to update')
-                        return
-                    }
-                    return res.json()
-                })
-                .then( parsedRes => {
-                    alert( parsedRes.message )
+                    createForm.reset()
                     getAll()
                 })
-                .catch(err => {
-                    alert(err.message)
-                    console.error({ err })
-                })
+                .catch(err => { console.error({ err }) })
         });
 
-
-        //SEARCH DATA
-        function search(){
-            // extracting value from input field
-            const value = document.getElementById('search-input').value
-            getAll( value )
-        }
-        
-        // GETTING ALL CAR DATA FROM API
-        function getAll( query ){
-            const api = query ? 'http://localhost:3000/get-car?key=' + query :  'http://localhost:3000/get-car'
-            fetch(api)
-                .then( res => {
-                    return res.json();
+        // ---- UPDATE ----
+        const updateForm = document.getElementById('updateForm')
+        updateForm.addEventListener('submit', function (event) {
+            event.preventDefault()
+            const bodyParam = new URLSearchParams(new FormData(updateForm))
+            fetch(API + '/update', { method: 'POST', body: bodyParam })
+                .then(res => {
+                    if (res.status !== 200) { alert('Unable to update'); return }
+                    return res.json()
                 })
-                .then( parsedRes => {
-                    let carMarkup = ''; 
-                    parsedRes.forEach( item => {
-                        carMarkup = carMarkup +
-                            `<div class="car-item"> 
-                                <p>Key: ${ item.Key }</p>
-                                <p>Made In: ${ item.Record.make }</p>
-                                <p>Model: ${ item.Record.model }</p>
-                                <p>Color: ${ item.Record.color }</p>
-                                <p>Owner: ${ item.Record.owner }</p>
-                            </div>`
-                    })
-                    // getting the html container with id=show-car
-                    const carContainer = document.getElementById('show-car')
+                .then(parsedRes => {
+                    alert(parsedRes.message)
+                    updateForm.reset()
+                    getAll()
+                })
+                .catch(err => { alert(err.message); console.error({ err }) })
+        });
 
-                    //CLEANING EXISTING CAR HTML NODE/ELEMENT
-                    while (carContainer.hasChildNodes()) {
-                        carContainer.removeChild(carContainer.firstChild);
+        // ---- SEARCH FILTER UI ----
+        function onFilterChange() {
+            const type = document.getElementById('filter-type').value
+            document.getElementById('wrap-id').classList.toggle('hidden', type !== 'key')
+            document.getElementById('wrap-department').classList.toggle('hidden', type !== 'department')
+            document.getElementById('wrap-status').classList.toggle('hidden', type !== 'status')
+        }
+
+        function runSearch() {
+            const type = document.getElementById('filter-type').value
+            let value
+            if (type === 'key') value = document.getElementById('search-id').value.trim()
+            else if (type === 'department') value = document.getElementById('search-department').value
+            else value = document.getElementById('search-status').value
+
+            if (!value) { alert('Enter a value to search'); return }
+            getAll(type + '=' + encodeURIComponent(value))
+        }
+
+        // ---- READ ALL / SEARCH ----
+        // queryString is optional, e.g. 'key=EMP001', 'department=IT', 'status=Active'
+        function getAll(queryString) {
+            const api = queryString ? API + '/get-identity?' + queryString : API + '/get-identity'
+            fetch(api)
+                .then(res => res.json())
+                .then(parsedRes => {
+                    const container = document.getElementById('results')
+                    container.innerHTML = ''
+
+                    if (!Array.isArray(parsedRes) || parsedRes.length === 0) {
+                        container.innerHTML = '<p class="empty">No identities match this query.</p>'
+                        return
                     }
 
-                    // Adding new car data markup
-                    carContainer.insertAdjacentHTML('beforeend', carMarkup)
+                    let markup = ''
+                    parsedRes.forEach(item => {
+                        const r = item.Record
+                        const status = r.clearance_status || 'Unknown'
+                        const cls = status.toLowerCase()
+                        markup +=
+                            `<article class="card status-${cls}">
+                                <div class="card-top">
+                                    <span class="emp-id">${item.Key}</span>
+                                    <span class="pill pill-${cls}">${status}</span>
+                                </div>
+                                <h3>${r.employee_name || '—'}</h3>
+                                <dl>
+                                    <div><dt>Department</dt><dd>${r.department || '—'}</dd></div>
+                                    <div><dt>Role</dt><dd>${r.role || '—'}</dd></div>
+                                </dl>
+                            </article>`
+                    })
+                    container.insertAdjacentHTML('beforeend', markup)
                 })
                 .catch(err => {
                     alert('Operation failed')
@@ -174,7 +232,9 @@
                 })
         }
 
-        
+        // Load the directory on first paint.
+        getAll()
     </script>
 </body>
+
 </html>
