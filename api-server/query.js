@@ -11,7 +11,7 @@ const path = require('path');
 const fs = require('fs');
 
 
-async function main( queryData ) {
+async function main(queryData) {
     try {
         // load the network configuration
         const ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'org1.example.com', 'connection-org1.json');
@@ -40,24 +40,39 @@ async function main( queryData ) {
         // Get the contract from the network.
         const contract = network.getContract('fabcar');
 
-        /// IF QUERY DATA IS AVAILABLE
-        if( queryData.key ){
+        // SEARCH by unique ID  ->  readIdentity (returns a single object)
+        if (queryData.key) {
+            const queryResult = await contract.evaluateTransaction('readIdentity', `${queryData.key}`);
+            console.log(`readIdentity result: ${queryResult.toString()}`);
+            await gateway.disconnect();
+            return queryResult;
+        }
 
-            const queryResult =  await contract.evaluateTransaction('queryCar', `${ queryData.key }`);
-            console.log(`QUERY Transaction has been evaluated, result is: ${queryResult.toString()}`)
+        // SEARCH by department  ->  CouchDB rich query (returns an array)
+        if (queryData.department) {
+            const queryResult = await contract.evaluateTransaction('queryByDepartment', `${queryData.department}`);
+            console.log(`queryByDepartment result: ${queryResult.toString()}`);
+            await gateway.disconnect();
+            return queryResult;
+        }
 
-            return queryResult
-         }
+        // SEARCH by clearance status  ->  CouchDB rich query (returns an array)
+        if (queryData.status) {
+            const queryResult = await contract.evaluateTransaction('queryByClearanceStatus', `${queryData.status}`);
+            console.log(`queryByClearanceStatus result: ${queryResult.toString()}`);
+            await gateway.disconnect();
+            return queryResult;
+        }
 
-        // Evaluate the specified transaction.
-        // queryAllCars transaction - requires no arguments, ex: ('queryAllCars')
-        const result = await contract.evaluateTransaction('queryAllCars');
-        console.log(`Transaction has been evaluated, result is: ${result.toString()}`);
+        // READ ALL  ->  queryAllIdentities (returns an array)
+        const result = await contract.evaluateTransaction('queryAllIdentities');
+        console.log(`queryAllIdentities result: ${result.toString()}`);
+
         // Disconnect from the gateway.
         await gateway.disconnect()
-        
+
         return result
-        
+
     } catch (error) {
         console.error(`Failed to evaluate transaction: ${error}`);
         process.exit(1);

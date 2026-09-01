@@ -141,20 +141,25 @@ class FabCar extends Contract {
     async _getQueryResult(ctx, queryString) {
         const resultsIterator = await ctx.stub.getQueryResult(queryString);
         const allResults = [];
-        for await (const { key, value } of resultsIterator) {
-            const strValue = Buffer.from(value).toString('utf8');
-            let record;
-            try {
-                record = JSON.parse(strValue);
-            } catch (err) {
-                console.log(err);
-                record = strValue;
+        while (true) {
+            const res = await resultsIterator.next();
+            if (res.value && res.value.value.toString()) {
+                const strValue = res.value.value.toString('utf8');
+                let record;
+                try {
+                    record = JSON.parse(strValue);
+                } catch (err) {
+                    console.log(err);
+                    record = strValue;
+                }
+                allResults.push({ Key: res.value.key, Record: record });
             }
-            allResults.push({ Key: key, Record: record });
+            if (res.done) {
+                await resultsIterator.close();
+                return JSON.stringify(allResults);
+            }
         }
-        return JSON.stringify(allResults);
     }
-
 }
 
 module.exports = FabCar;
