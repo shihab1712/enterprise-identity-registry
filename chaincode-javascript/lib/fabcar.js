@@ -160,7 +160,6 @@ class FabCar extends Contract {
             }
         }
     }
-
 }
 
 module.exports = FabCar;
