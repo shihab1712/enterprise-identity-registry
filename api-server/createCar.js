@@ -2,6 +2,9 @@
  * Copyright IBM Corp. All Rights Reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * NOTE: filename kept as createCar.js (as listed in the project brief) but this
+ * module now submits the createIdentity transaction.
  */
 
 'use strict';
@@ -11,7 +14,7 @@ const path = require('path');
 const fs = require('fs');
 
 
-async function main( params ) {
+async function main(params) {
     try {
         // load the network configuration
         const ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'org1.example.com', 'connection-org1.json');
@@ -41,21 +44,21 @@ async function main( params ) {
         const contract = network.getContract('fabcar');
 
         // gathering payload data
-        const key = params.key
-        const make = params.make
-        const model = params.model 
-        const color = params.color 
-        const owner = params.owner 
+        const key = params.key                        // e.g. EMP007
+        const employeeName = params.employee_name
+        const department = params.department
+        const role = params.role
+        const clearanceStatus = params.clearance_status
 
-        // Submit the specified transaction.
-        // createCar transaction - requires 5 argument, ex: ('createCar', 'CAR12', 'Honda', 'Accord', 'Black', 'Tom')
-        await contract.submitTransaction('createCar', `${ key }`, `${ make }`, `${ model }`, `${ color }`, `${ owner }`);
-        console.log('Transaction has been submitted');
+        // Submit the createIdentity transaction.
+        // ('createIdentity', 'EMP007', 'John Doe', 'IT', 'Developer', 'Active')
+        await contract.submitTransaction('createIdentity', `${key}`, `${employeeName}`, `${department}`, `${role}`, `${clearanceStatus}`);
+        console.log('Create Identity transaction has been submitted');
 
         // Disconnect from the gateway.
         await gateway.disconnect();
 
-    } 
+    }
     catch (error) {
         console.error(`Failed to create transaction: ${error}`);
         process.exit(1);
