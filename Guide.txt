@@ -1,0 +1,12 @@
+git clone https://github.com/shihab1712/enterprise-identity-registry.git
+cd enterprise-identity-registry
+
+git checkout -b api-b 
+
+# Replace:
+#   api-server/index.js
+#   api-server/query.js
+
+git add api-server/index.js api-server/query.js
+git commit -m "api: identity routes and id/department/status search"
+git push -u origin api-b
