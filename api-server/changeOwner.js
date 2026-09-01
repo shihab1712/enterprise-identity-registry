@@ -2,6 +2,9 @@
  * Copyright IBM Corp. All Rights Reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * NOTE: filename kept as changeOwner.js (as listed in the project brief) but
+ * this module now submits the updateClearanceStatus transaction.
  */
 
 'use strict';
@@ -11,7 +14,7 @@ const path = require('path');
 const fs = require('fs');
 
 
-async function main( params ) {
+async function main(params) {
     try {
         // load the network configuration
         const ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'org1.example.com', 'connection-org1.json');
@@ -39,22 +42,21 @@ async function main( params ) {
 
         // Get the contract from the network.
         const contract = network.getContract('fabcar');
-        console.log({ contract, CL: contract.network })
-        // contract.network
-        const key = params.key
-        const newOwner = params.owner
 
-        // Submit the specified transaction.
-        // changeCarOwner transaction - requires 2 args , ex: ('changeCarOwner', 'CAR12', 'Dave')
-        await contract.submitTransaction('changeCarOwner', `${ key }`, `${ newOwner }`)
-        console.log('Change Owner Transaction has been submitted');
+        const key = params.key                          // e.g. EMP003
+        const newStatus = params.clearance_status       // Active / Suspended / Revoked
+
+        // Submit the updateClearanceStatus transaction.
+        // ('updateClearanceStatus', 'EMP003', 'Revoked')
+        await contract.submitTransaction('updateClearanceStatus', `${key}`, `${newStatus}`)
+        console.log('Update Clearance Status transaction has been submitted');
 
         // Disconnect from the gateway.
         await gateway.disconnect();
 
-    } 
+    }
     catch (error) {
-        console.error(`Failed to change owner transaction: ${error}`);
+        console.error(`Failed to update status transaction: ${error}`);
         process.exit(1);
     }
 }
